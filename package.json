@@ -1,0 +1,35 @@
+{
+    "name": "flowster-sandbox",
+    "private": true,
+    "version": "0.1.0",
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "preview": "vite preview"
+    },
+    "dependencies": {
+        "@headlessui/react": "^2.2.9",
+        "@heroicons/react": "^2.2.0",
+        "@tailwindcss/forms": "^0.5.10",
+        "crypto-js": "^4.2.0",
+        "escape-html": "^1.0.3",
+        "github-markdown-css": "^5.8.1",
+        "lucide-react": "^0.548.0",
+        "marked": "^16.4.1",
+        "preact": "^10.19.3",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "react-markdown": "^10.1.0",
+        "react-router-dom": "^7.9.4",
+        "remark-gfm": "^4.0.1",
+        "zustand": "^5.0.8"
+    },
+    "devDependencies": {
+        "@vitejs/plugin-react": "^4.2.1",
+        "autoprefixer": "^10.4.16",
+        "postcss": "^8.4.32",
+        "tailwindcss": "^3.4.0",
+        "vite": "^5.0.8"
+    }
+}

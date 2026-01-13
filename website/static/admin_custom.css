@@ -1,0 +1,7 @@
+/* website/static/website/css/admin_custom.css */
+.mon-space-textarea, textarea {
+    /* Feel free to tweak the font stack */
+    font-family: Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", Courier, monospace;
+    /* Optional: make the change obvious for demo purposes */
+    /* background: #f9f9f9; */
+}

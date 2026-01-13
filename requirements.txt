@@ -1,0 +1,13 @@
+result
+fastapi
+uvicorn[standard]
+jinja2
+python-multipart
+tzwhere
+pytz
+astunparse
+mako
+result
+asgiref
+requests
+pymemcache
