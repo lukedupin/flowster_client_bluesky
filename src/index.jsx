@@ -17,6 +17,7 @@ import { HeaderSearch } from "./components/header_search";
 import './index.css'
 import {ChatInterface} from "./pages/chat_interface.jsx";
 import {AgentInterface} from "./pages/agent_interface.jsx";
+import {ProfileInterface} from "./pages/profile_interface.jsx";
 
 export const App = (props) => {
     const [state, setState] = useState({
@@ -167,6 +168,10 @@ export const Core = (props) => {
                         <Routes>
                             <Route path='/agent/:agentUid' element={
                                 <AgentInterface
+                                    showToast={showToast} />
+                            }/>
+                            <Route path='/profile_builder' element={
+                                <ProfileInterface
                                     showToast={showToast} />
                             }/>
                             <Route path='*' element={
