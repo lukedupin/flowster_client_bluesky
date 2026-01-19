@@ -1,4 +1,5 @@
 import os, django
+import json5
 
 from asgiref.sync import sync_to_async
 from django.conf import settings
@@ -41,6 +42,22 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+def find_dict_blocks(text: str):
+    pattern = re.compile(r'\{(?:[^{}]|(?R))*\}')
+    for m in pattern.finditer(text):
+        yield m.group()
+
+def extract_dicts_from_text(text: str):
+    """Return a list of Python dicts extracted from *text*."""
+    result = []
+    for block in find_dict_blocks(text):
+        try:
+            # JSON5 can parse single‑quoted keys, trailing commas, etc.
+            result.append(json5.loads(block))
+        except json5.JSON5DecodeError as e:
+            pass
+    return result
 
 async def stream_safe( js:dict, bs=32768 ):
     s = json.dumps(js)
@@ -264,9 +281,9 @@ async def chat(request:Request):#question: str=Body(...), conversation: list[dic
 
         async for chunk in data_only.ok_value:
             if chunk.type == 'full_content':
-                js = {"type": "profile", "profile": chunk.text}
-                async for packet in stream_safe(js, 4096):
-                    yield packet
+                profiles = extract_dicts_from_text(chunk.text)
+                if len(profiles) > 0:
+                    yield f"profile: {profiles[0]}\n\n"
 
 
         # Human response

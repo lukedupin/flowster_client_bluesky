@@ -36,10 +36,6 @@ const wsUrl = `${WS_URL}/api/speech_to_text`;
 export const ProfileInterface = props => {
     const {showToast} = props
     const [contexts, setContexts] = useState([
-        {name: 'system', content: 'You are a helpful assistant.', file_type: 'text'},
-        {name: 'system_text', content: 'You are a helpful assistant.', file_type: 'text'},
-        {name: 'PROFILE', content: 'You are a helpful assistant.', file_type: 'text'},
-        {name: 'STRUCTURE', content: 'You are a helpful assistant.', file_type: 'text'},
     ])
     const [scrollLock, setScrollLock] = useState(false)
     const [configuration, setConfiguration] = useState('')
@@ -48,6 +44,8 @@ export const ProfileInterface = props => {
         intro: '',
         structure: [],
     })
+
+    const [profile, setProfile] = useState('{}')
 
     const [profile_markdown, setProfileMarkdown] = useState(`# User Profile
 
@@ -84,28 +82,15 @@ Feel free to update this profile to better reflect your preferences and backgrou
         }
     }
 
-    useEffect(() => {
-        const structure = {}
-        section.structure.forEach( field => {
-            structure[field.name] = field.description
-        })
-
-        setContexts(prev => {
-            const updated = prev.filter(x => x.name.toLowerCase() !== 'structure')
-            updated.push({ name: 'STRUCTURE', content: JSON.stringify(structure, null, 2), file_type: 'text' })
-            return updated
-        })
-
-    }, [section])
-
     const handleProfile = ( profile ) => {
-        setProfileMarkdown( profile )
+        setProfile( profile )
+        setProfileMarkdown(`# User Profile
+This profile contains information about the user that can be used to personalize interactions.
 
-        setContexts( prev => {
-            const updated = prev.filter(x => x.name.toLowerCase() !== 'profile')
-            updated.push({ name: 'PROFILE', content: profile, file_type: 'text' })
-            return updated
-        })
+${'```json\n' + profile + '\n```'}
+
+Feel free to update this profile to better reflect your preferences and background!
+`)
     }
     
     const prevScrollYRef = useRef(0);
@@ -194,6 +179,7 @@ Feel free to update this profile to better reflect your preferences and backgrou
             (js) => {
                 console.log(js)
                 setSection(js)
+                setProfile({})
 
                 conversationRef.current.setMessages([{
                     id: 0,
@@ -250,6 +236,8 @@ Feel free to update this profile to better reflect your preferences and backgrou
                 <h2 className="text-2xl font-bold p-4">User Conversation</h2>
                 <Conversation
                     ref={conversationRef}
+                    section={section}
+                    profile={profile}
                     onProfile={handleProfile}
                     onMessageChange={handleMessageChange}
                     onRetry={handleRetry}

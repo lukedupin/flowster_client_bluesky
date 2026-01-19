@@ -20,7 +20,7 @@ import {
 
 // Forward declare the handle send function
 export const Conversation = forwardRef((props, ref) => {
-    const {onProfile, showToast} = props
+    const {section, profile, onProfile, showToast} = props
     const [messages, setMessages] = useState([])
     const [edit_convo, setEditConvo] = useState(null)
 
@@ -94,6 +94,14 @@ export const Conversation = forwardRef((props, ref) => {
                 }
             }
         })
+        payload.contexts.push({ name: 'PROFILE', content: profile, file_type: 'text' })
+
+        const structure = {}
+        section.structure.forEach( field => {
+            structure[field.name] = field.description
+        })
+        payload.contexts.push({ name: 'STRUCTURE', content: JSON.stringify(structure, null, 2), file_type: 'text' })
+
         console.log(payload)
 
         const stream_resp = await Util.fetch_stream_build('/api/chat', payload )
