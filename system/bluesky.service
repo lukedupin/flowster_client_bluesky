@@ -1,0 +1,19 @@
+[Unit]
+Description=Bluesky dev runtime
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=ldupin
+Group=ldupin
+WorkingDirectory=/home/ldupin/Development/flowster/bluesky
+Environment=PATH=/home/ldupin/Development/flowster/bluesky/venv/bin:/usr/bin
+ExecStart=/home/ldupin/Development/flowster/bluesky/venv/bin/python main.py 8079
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
