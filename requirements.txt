@@ -14,3 +14,4 @@ pymemcache
 django
 mistune
 json5
+regex

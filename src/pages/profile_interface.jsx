@@ -60,7 +60,7 @@ This profile contains information about the user that can be used to personalize
         "goals": ["learn new programming languages", "travel to 10 countries", "improve guitar skills"]
     }
 
-Feel free to update this profile to better reflect your preferences and background!
+As the user continues to chat with the bot, the profile will be updated.
 `);
 
     const [state, setState] = useState({
@@ -87,7 +87,7 @@ Feel free to update this profile to better reflect your preferences and backgrou
         setProfileMarkdown(`# User Profile
 This profile contains information about the user that can be used to personalize interactions.
 
-${'```json\n' + profile + '\n```'}
+${'```json\n' + JSON.stringify(profile, null, 2) + '\n```'}
 
 Feel free to update this profile to better reflect your preferences and background!
 `)
@@ -200,8 +200,16 @@ Feel free to update this profile to better reflect your preferences and backgrou
                 className="col-span-1 border bg-white h-full p-4"
                 fields={section.structure}
                 title={section.title || "Section"}
+                profile={profile}
+                onContentChange={handleProfile}
                 showToast={showToast}
             />
+
+            <div className="col-span-1 border bg-white w-full h-full px-4">
+                <div className="markdown-body p-2 rounded bg-gray-50">
+                    <MarkdownViewer content={profile_markdown} />
+                </div>
+            </div>
 
             <div className="col-span-1 border bg-white w-full h-full p-4">
                 <h2 className="text-xl font-bold mb-4">Section Configuration</h2>
@@ -221,15 +229,6 @@ Feel free to update this profile to better reflect your preferences and backgrou
                     onClick={handleRestart}>
                     Restart
                 </button>
-            </div>
-
-            <div className="col-span-1 border bg-white w-full h-full p-4">
-                <h2 className="text-xl font-bold mb-4">User Profile</h2>
-                <div className="mb-6">
-                    <div className="markdown-body max-h-48 p-2 rounded bg-gray-50">
-                        <MarkdownViewer content={profile_markdown} />
-                    </div>
-                </div>
             </div>
 
             <div className="col-span-1 flex-1 flex flex-col h-full bg-gray-50 border">

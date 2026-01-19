@@ -11,9 +11,9 @@ django.setup()
 import uuid
 import sys
 import re
+import ast
 import aiohttp
 import mistune
-import re
 from typing import List, Dict, Any
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Body, Request
@@ -28,6 +28,7 @@ import asyncio
 import json
 import requests
 from datetime import datetime
+import regex as re
 
 from flowster.stdlib.storage import cache, filesystem
 from settings import FLOW_SHEET, SKIP
@@ -43,21 +44,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-def find_dict_blocks(text: str):
-    pattern = re.compile(r'\{(?:[^{}]|(?R))*\}')
-    for m in pattern.finditer(text):
-        yield m.group()
-
 def extract_dicts_from_text(text: str):
-    """Return a list of Python dicts extracted from *text*."""
-    result = []
-    for block in find_dict_blocks(text):
-        try:
-            # JSON5 can parse single‑quoted keys, trailing commas, etc.
-            result.append(json5.loads(block))
-        except json5.JSON5DecodeError as e:
-            pass
-    return result
+    pattern = r'''
+        \{                          # opening brace
+            (?:                     # non‑capturing group
+                [^{}"']+            # anything but braces or quotes
+              | "(?:\\.|[^"\\])*"   # double‑quoted string
+              | '(?:\\.|[^'\\])*'   # single‑quoted string
+              | (?R)                # recursive reference
+            )*
+        \}                          # closing brace
+    '''
+
+    try:
+        raw_dicts = re.findall(pattern, text, flags=re.VERBOSE | re.DOTALL)
+        return [json5.loads(d) for d in raw_dicts]
+
+    except Exception as e:
+        print("Error parsing JSON5:", e)
+        return []
 
 async def stream_safe( js:dict, bs=32768 ):
     s = json.dumps(js)
@@ -240,7 +245,7 @@ async def chat(request:Request):#question: str=Body(...), conversation: list[dic
     if len([x for x in contexts if x.get('name') == 'system_text']) <= 0:
         system_text = {
             'name': 'system_text',
-            'content': '''Request for the missing data from PROFILE based on STRUCTURE. Be friendly and concise.''',
+            'content': '''Request for the missing data from PROFILE based on STRUCTURE. Be friendly and concise. Always respond in full sentences, not JSON. If everything is complete, respond with "Lets continue to the next section."''',
             'file_type': 'text',
         }
     else:
@@ -283,7 +288,8 @@ async def chat(request:Request):#question: str=Body(...), conversation: list[dic
             if chunk.type == 'full_content':
                 profiles = extract_dicts_from_text(chunk.text)
                 if len(profiles) > 0:
-                    yield f"profile: {profiles[0]}\n\n"
+                    js = {"type": "profile", "profile": profiles[0]}
+                    yield f"data: {json.dumps(js)}\n\n"
 
 
         # Human response
@@ -350,6 +356,24 @@ async def get_tags():
     models = _ret.ok_value
 
     return {"models": models, 'successful': True}
+
+
+@app.post("/api/model")
+async def _model(request:Request):
+    body = await request.json()
+    model: str = body.get('model', None)
+
+    if model is None or model == '':
+        model = None
+        if (_model := await filesystem.read(FLOW_SHEET, f"model")).is_ok():
+            if _model.ok_value is not None and _model.ok_value != '':
+                model = _model.ok_value
+
+    else:
+        if (ret := await filesystem.write(FLOW_SHEET, f"model", model)).is_err():
+            return {"successful": False, "reason": ret.err_value}
+
+    return {"successful": True, "model": model}
 
 
 @app.websocket("/ws/speech_to_text")

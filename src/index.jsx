@@ -105,21 +105,6 @@ export const Core = (props) => {
         }
     }, [location])
 
-    useEffect(() => {
-        handleUpdateAgents()
-    }, [])
-
-    const handleUpdateAgents = () => {
-        //Fetch agents
-        Util.post_js('/api/agent_list', {},
-            (js) => {
-                setAgents(js.agents || [])
-            },
-            err => {
-                showToast("Failed to fetch agents: " + err, "failure")
-            })
-    }
-
     const search = ""
     const handleSearch = (search) => {
         console.log("Search: ", search)
@@ -166,16 +151,8 @@ export const Core = (props) => {
                     {/* <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">*/}
                     <div className="w-full">
                         <Routes>
-                            <Route path='/agent/:agentUid' element={
-                                <AgentInterface
-                                    showToast={showToast} />
-                            }/>
-                            <Route path='/profile_builder' element={
-                                <ProfileInterface
-                                    showToast={showToast} />
-                            }/>
                             <Route path='*' element={
-                                <ChatInterface
+                                <ProfileInterface
                                     showToast={showToast} />
                             }/>
                         </Routes>

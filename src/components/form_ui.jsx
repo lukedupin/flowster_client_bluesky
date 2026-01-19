@@ -20,15 +20,20 @@ import {
 
 // Forward declare the handle send function
 export const FormUI = props => {
-    const {title, fields, showToast} = props
+    const {title, fields, profile, onChanged, showToast} = props
     const [content, setContent] = useState({})
 
     const className = props.className || ""
     const onContentChange = props.onContentChange || (() => {})
 
     useEffect(() => {
-        onContentChange(content)
-    }, [content])
+        setContent(profile)
+    }, [profile]);
+
+    const handleChanged = ( name, value ) => {
+        setContent( prev => ({...prev, [name]: value}) )
+        onContentChange( {...content, [name]: value})
+    }
 
     const calcColSpan = (info) => {
         if ( info.col_end !== undefined && info.col_end > 0 ) {
@@ -37,11 +42,11 @@ export const FormUI = props => {
 
         return `col-span-${info.col_span}`
     }
-    
+
     return (
         <div className={className}>
             <h2 className="text-2xl font-bold mb-4">{title}</h2>
-            <div className="grid grid-cols-6 gap-x-6 h-px bg-gray-200 mb-4">
+            <div className="grid grid-cols-6 gap-x-6 mb-4">
                 {fields.map( (field, idx) => (
                     <div key={idx} className={Util.classNames( calcColSpan(field), "mb-4")}>
                         <label className="block text-sm font-medium text-gray-700 mb-1">{field.label}</label>
@@ -49,7 +54,7 @@ export const FormUI = props => {
                                 type="text"
                                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
                                 value={content[field.name] || ''}
-                                onChange={e => setContent({...content, [field.name]: e.target.value})}
+                                onChange={e => handleChanged( field.name, e.target.value)}
                             />
                     </div>
                 ))}
