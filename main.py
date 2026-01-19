@@ -291,6 +291,9 @@ async def chat(request:Request):#question: str=Body(...), conversation: list[dic
                     js = {"type": "profile", "profile": profiles[0]}
                     yield f"data: {json.dumps(js)}\n\n"
 
+                    # Store the updated profile!
+                    kwargs['contexts']['PROFILE'] = json5.dumps(profiles[0])
+
 
         # Human response
         kwargs['system'] = system_text['content']
