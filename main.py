@@ -241,6 +241,8 @@ async def chat(request:Request):#question: str=Body(...), conversation: list[dic
         await filesystem.write(FLOW_SHEET, f"model", model)
 
     async def _sse_stream():
+        # Data only
+
         # Endpoint that returns a single response
         if (_stream := await chat_stream(
             FLOW_SHEET,
@@ -251,14 +253,23 @@ async def chat(request:Request):#question: str=Body(...), conversation: list[dic
             model=model,
             **kwargs
         )).is_err():
-            return {"error": _stream.err_value}
+            yield f'error: {_stream.err_value}\n\n'
+            return
         data_stream = _stream.ok_value
 
         # Create the streamer
         if (data_only := await chat_result( FLOW_SHEET, data_stream )).is_err():
-            return {"error": data_only.err_value}
+            yield f'error: {data_only.err_value}\n\n'
+            return
+
+        async for chunk in data_only.ok_value:
+            if chunk.type == 'full_content':
+                js = {"type": "profile", "profile": chunk.text}
+                async for packet in stream_safe(js, 4096):
+                    yield packet
 
 
+        # Human response
         kwargs['system'] = system_text['content']
 
         # Endpoint that returns a single response
@@ -271,27 +282,17 @@ async def chat(request:Request):#question: str=Body(...), conversation: list[dic
             model=model,
             **kwargs
         )).is_err():
-            return {"error": _stream.err_value}
+            yield f"error: {_stream.err_value}\n\n"
+            return
         stream = _stream.ok_value
 
         # Create the streamer
         if (stream_ret := await chat_result( FLOW_SHEET, stream )).is_err():
-            return {"error": stream_ret.err_value}
+            yield f"error: {stream_ret.err_value}\n\n"
+            return
 
-        if callback is None:
-            async def callback(chunk):
-                pass
-
-        bs = 4096  # Stream in 4KB chunks
-        async for chunk in data_only:
-            if chunk.type == 'full_content':
-                js = {"type": "profile", "profile": chunk.text}
-                async for packet in stream_safe(js, 4096):
-                    yield packet
-
-        async for chunk in stream:
-            await callback(chunk)
-
+        bs = 4096
+        async for chunk in stream_ret.ok_value:
             if chunk.type == 'content':
                 js = {"type": "content", "text": chunk.text}
 
@@ -314,11 +315,9 @@ async def chat(request:Request):#question: str=Body(...), conversation: list[dic
         async for packet in stream_safe(js, bs):
             yield packet
 
-        await callback(None)
-
     """Endpoint that streams events using SSE"""
     return StreamingResponse(
-        _sse_stream( data_only.ok_value, stream_ret.ok_value, conversation ),
+        _sse_stream(),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
