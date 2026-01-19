@@ -11,3 +11,5 @@ result
 asgiref
 requests
 pymemcache
+django
+mistune

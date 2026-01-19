@@ -6,7 +6,7 @@ import {
     EditIcon,
     PlusIcon,
     BrainIcon,
-    PlusCircleIcon, DownloadIcon
+    PlusCircleIcon, DownloadIcon, BotIcon
 } from 'lucide-react'
 import * as Util from "../helpers/util.js"
 import { TypingIndicator } from "../components/typing_indicator.jsx";
@@ -28,14 +28,26 @@ import {
     saveAsMarkdown
 } from "../components/markdown_viewer.jsx";
 import {Conversation} from "../components/conversation.jsx";
+import {FormUI} from "../components/form_ui.jsx";
 const wsUrl = `${WS_URL}/api/speech_to_text`;
 
 
 
 export const ProfileInterface = props => {
     const {showToast} = props
-    const [contexts, setContexts] = useState([])
+    const [contexts, setContexts] = useState([
+        {name: 'system', content: 'You are a helpful assistant.', file_type: 'text'},
+        {name: 'system_text', content: 'You are a helpful assistant.', file_type: 'text'},
+        {name: 'PROFILE', content: 'You are a helpful assistant.', file_type: 'text'},
+        {name: 'STRUCTURE', content: 'You are a helpful assistant.', file_type: 'text'},
+    ])
     const [scrollLock, setScrollLock] = useState(false)
+    const [configuration, setConfiguration] = useState('')
+    const [section, setSection] = useState({
+        title: '',
+        intro: '',
+        structure: [],
+    })
 
     const [profile_markdown, setProfileMarkdown] = useState(`# User Profile
 
@@ -70,6 +82,30 @@ Feel free to update this profile to better reflect your preferences and backgrou
         if ( scrollLock ) {
             scrollToBottom()
         }
+    }
+
+    useEffect(() => {
+        const structure = {}
+        section.structure.forEach( field => {
+            structure[field.name] = field.description
+        })
+
+        setContexts(prev => {
+            const updated = prev.filter(x => x.name.toLowerCase() !== 'structure')
+            updated.push({ name: 'STRUCTURE', content: JSON.stringify(structure, null, 2), file_type: 'text' })
+            return updated
+        })
+
+    }, [section])
+
+    const handleProfile = ( profile ) => {
+        setProfileMarkdown( profile )
+
+        setContexts( prev => {
+            const updated = prev.filter(x => x.name.toLowerCase() !== 'profile')
+            updated.push({ name: 'PROFILE', content: profile, file_type: 'text' })
+            return updated
+        })
     }
     
     const prevScrollYRef = useRef(0);
@@ -142,11 +178,79 @@ Feel free to update this profile to better reflect your preferences and backgrou
         conversationRef.current.handleSend(message, model, contexts)
     }
 
+    const handleConfigurationChange = (e) => {
+        setConfiguration(e.target.value)
+
+        Util.fetch_js('/api/configure_section', { markdown: e.target.value },
+            (js) => {
+                console.log(js)
+                setSection(js)
+            },
+            err => showToast)
+    }
+
+    const handleRestart = () => {
+        Util.fetch_js('/api/configure_section', { markdown: configuration },
+            (js) => {
+                console.log(js)
+                setSection(js)
+
+                conversationRef.current.setMessages([{
+                    id: 0,
+                    content: js.intro,
+                    sender: 'assistant',
+                    timestamp: new Date().toLocaleTimeString('en-US', {
+                        hour: 'numeric',
+                        minute: '2-digit'
+                    })
+                }])
+            },
+            err => showToast)
+    }
+
     return (
         <div className="grid grid-cols-2" >
+            <FormUI
+                className="col-span-1 border bg-white h-full p-4"
+                fields={section.structure}
+                title={section.title || "Section"}
+                showToast={showToast}
+            />
+
+            <div className="col-span-1 border bg-white w-full h-full p-4">
+                <h2 className="text-xl font-bold mb-4">Section Configuration</h2>
+                <div className="flex flex-col w-full border border-gray-200 rounded-2xl bg-gray-50 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent">
+                    <div className="inline-flex bg-transparent focus-within:ring-0 focus-within:ring-transparent focus-within:border-transparent">
+                        <textarea
+                            value={configuration}
+                            onChange={handleConfigurationChange}
+                            placeholder={`# Example section name\n\nExample introduction.\n\n - name: {3} The users name\n - age: {1} [integer] The users age`}
+                            rows="20"
+                            className="w-full px-4 py-3 pr-12 text-sm border-none bg-transparent resize-none focus:ring-0 overflow-hidden ring-0 outline-0"
+                        />
+                    </div>
+                </div>
+                <button
+                    className="mt-2 p-2.5 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                    onClick={handleRestart}>
+                    Restart
+                </button>
+            </div>
+
+            <div className="col-span-1 border bg-white w-full h-full p-4">
+                <h2 className="text-xl font-bold mb-4">User Profile</h2>
+                <div className="mb-6">
+                    <div className="markdown-body max-h-48 p-2 rounded bg-gray-50">
+                        <MarkdownViewer content={profile_markdown} />
+                    </div>
+                </div>
+            </div>
+
             <div className="col-span-1 flex-1 flex flex-col h-full bg-gray-50 border">
+                <h2 className="text-2xl font-bold p-4">User Conversation</h2>
                 <Conversation
                     ref={conversationRef}
+                    onProfile={handleProfile}
                     onMessageChange={handleMessageChange}
                     onRetry={handleRetry}
                     onStreamEnd={() => setScrollLock(false)}
@@ -217,14 +321,6 @@ Feel free to update this profile to better reflect your preferences and backgrou
                 />
             </div>
 
-            <div className="col-span-1 border bg-white h-full p-4">
-                <h2 className="text-lg font-medium mb-4">User Profile</h2>
-                <div className="mb-6">
-                    <div className="markdown-body max-h-48 p-2 rounded bg-gray-50">
-                        <MarkdownViewer content={profile_markdown} />
-                    </div>
-                </div>
-            </div>
         </div>
     )
 }

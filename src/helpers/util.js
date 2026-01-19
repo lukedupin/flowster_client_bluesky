@@ -202,7 +202,8 @@ export const fetch_js = (url, js, succ, err) => {
     //console.log( csrf_token )
 
     //Load in the data
-    const form_data = new FormData()
+    const form_data = null //new FormData()
+    /*
     //const form_data = Object.values(js).some(x => x instanceof File)? new FormData(): null
     if ( js !== null ) {
         Object.keys( js ).forEach( key => {
@@ -220,6 +221,7 @@ export const fetch_js = (url, js, succ, err) => {
             form_data.append( key, content );
         } );
     }
+     */
 
     //Build the header
     let header = { method: 'GET' };

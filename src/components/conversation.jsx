@@ -20,7 +20,7 @@ import {
 
 // Forward declare the handle send function
 export const Conversation = forwardRef((props, ref) => {
-    const {showToast} = props
+    const {onProfile, showToast} = props
     const [messages, setMessages] = useState([])
     const [edit_convo, setEditConvo] = useState(null)
 
@@ -32,6 +32,7 @@ export const Conversation = forwardRef((props, ref) => {
 
     React.useImperativeHandle(ref, () => ({
         handleSend,
+        setMessages,
     }))
 
     useEffect(() => {
@@ -113,6 +114,9 @@ export const Conversation = forwardRef((props, ref) => {
                         updated[updated.length - 1].content += chunk.text
                         return updated
                     })
+                }
+                else if ( chunk.type === 'profile' ) {
+                    onProfile(chunk.profile)
                 }
                 else if ( chunk.type === 'thinking' ) {
                     setMessages(prev => {
